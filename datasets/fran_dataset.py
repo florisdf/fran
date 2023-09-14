@@ -61,4 +61,4 @@ class FRANDataset(Dataset):
             im1 = self.transform(im1)
             im2 = self.transform(im2)
 
-        return ((im1, age1), (im2, age2))
+        return (im1, age1, im2, age2)
