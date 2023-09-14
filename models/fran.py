@@ -23,8 +23,8 @@ class FRAN(nn.Module):
 
         self.out_conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=1)
 
-    def forward(self, x):
-        x1 = self.in_conv(x)
+    def forward(self, x0):
+        x1 = self.in_conv(x0)
 
         x2 = self.down1(x1)
         x3 = self.down2(x2)
@@ -37,7 +37,8 @@ class FRAN(nn.Module):
         x = self.up4(x, x1)
 
         x = self.out_conv(x)
-        return x
+
+        return x + x0
 
 
 class DownLayer(nn.Module):
