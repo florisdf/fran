@@ -1,5 +1,7 @@
 from torch import nn
 
+from .stylegan2.model import Downsample
+
 
 class PatchGAN(nn.Module):
     """Defines a PatchGAN discriminator"""
@@ -14,16 +16,19 @@ class PatchGAN(nn.Module):
         """
         super().__init__()
 
-        kw = 4
-        padw = 1
-        sequence = [nn.Conv2d(in_channels, out_channels, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]
+        sequence = [
+            Downsample(kernel=[1, 3, 3, 1], factor=2),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.LeakyReLU(0.2, True)
+        ]
         nf_mult = 1
         nf_mult_prev = 1
         for n in range(1, n_layers):  # gradually increase the number of filters
             nf_mult_prev = nf_mult
             nf_mult = min(2 ** n, 8)
             sequence += [
-                nn.Conv2d(out_channels * nf_mult_prev, out_channels * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=False),
+                Downsample(kernel=[1, 3, 3, 1], factor=2),
+                nn.Conv2d(out_channels * nf_mult_prev, out_channels * nf_mult, kernel_size=3, padding=1, bias=False),
                 nn.BatchNorm2d(out_channels * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
@@ -31,12 +36,12 @@ class PatchGAN(nn.Module):
         nf_mult_prev = nf_mult
         nf_mult = min(2 ** n_layers, 8)
         sequence += [
-            nn.Conv2d(out_channels * nf_mult_prev, out_channels * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=False),
+            nn.Conv2d(out_channels * nf_mult_prev, out_channels * nf_mult, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels * nf_mult),
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv2d(out_channels * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
+        sequence += [nn.Conv2d(out_channels * nf_mult, 1, kernel_size=3, padding=1)]  # output 1 channel prediction map
         self.model = nn.Sequential(*sequence)
 
     def forward(self, x):
