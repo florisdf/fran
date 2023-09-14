@@ -8,7 +8,8 @@ class FRAN(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.in_conv = DoubleConv(in_channels=3, out_channels=64)
+        # Input consists of RGB + 2 age channels
+        self.in_conv = DoubleConv(in_channels=5, out_channels=64)
 
         self.down1 = DownLayer(in_channels=64, out_channels=128)
         self.down2 = DownLayer(in_channels=128, out_channels=256)
