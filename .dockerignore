@@ -1,0 +1,5 @@
+pretrained_models
+.venv
+wandb
+ckpts
+data
