@@ -6,7 +6,6 @@ import torch
 from torch import nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from torchvision.models._api import Weights
 from tqdm import tqdm
 import wandb
 import lpips
@@ -20,9 +19,6 @@ from utils.running_extrema import RunningExtrema, MAX, MIN
 
 
 def run_training(
-    model_name: str,
-    model_weights: Optional[Weights],
-
     lr: float,
     beta1: float,
     beta2: float,
@@ -55,6 +51,8 @@ def run_training(
     discr_steps: int,
 
     num_epochs: int,
+    val_every: int,
+    num_val: int,
     batch_size: int,
     val_batch_size: int,
     num_workers: int,
@@ -135,7 +133,7 @@ def run_training(
 
     # Loss functions
     l1_loss_fn = nn.L1Loss()
-    lpips_loss_fn = lpips.LPIPS(net='vgg')
+    lpips_loss_fn = lpips.LPIPS(net='vgg').to(device)
     bce_loss_fn = nn.BCELoss()
 
     # Initialize Running Extrema
@@ -152,58 +150,65 @@ def run_training(
 
     # Training loop
     for epoch_idx in tqdm(range(num_epochs), leave=True):
-        # Training epoch
-        fran.train()
-        discr.train()
-        training_epoch(
-            fran=fran,
-            discr=discr,
+        is_end_of_epoch = False
 
-            fran_optim=fran_optimizer,
-            discr_optim=discr_optimizer,
+        while not is_end_of_epoch:
+            # Training steps
+            fran.train()
+            discr.train()
+            is_end_of_epoch = training_epoch(
+                fran=fran,
+                discr=discr,
 
-            l1_loss_fn=l1_loss_fn,
-            lpips_loss_fn=lpips_loss_fn,
-            bce_loss_fn=bce_loss_fn,
+                fran_optim=fran_optimizer,
+                discr_optim=discr_optimizer,
 
-            l1_weight=l1_weight,
-            lpips_weight=lpips_weight,
-            adv_weight=adv_weight,
+                l1_loss_fn=l1_loss_fn,
+                lpips_loss_fn=lpips_loss_fn,
+                bce_loss_fn=bce_loss_fn,
 
-            epoch_idx=epoch_idx,
-            device=device,
-            dl_train=dl_train,
-            discr_steps=discr_steps,
-        )
+                l1_weight=l1_weight,
+                lpips_weight=lpips_weight,
+                adv_weight=adv_weight,
 
-        # Validation epoch
-        fran.eval()
-        discr.eval()
-        validation_epoch(
-            fran=fran,
-            discr=discr,
+                epoch_idx=epoch_idx,
+                device=device,
+                dl_train=dl_train,
+                discr_steps=discr_steps,
 
-            l1_loss_fn=l1_loss_fn,
-            lpips_loss_fn=lpips_loss_fn,
-            bce_loss_fn=bce_loss_fn,
+                num_steps=val_every
+            )
 
-            l1_weight=l1_weight,
-            lpips_weight=lpips_weight,
-            adv_weight=adv_weight,
+            # Validation epoch
+            fran.eval()
+            discr.eval()
+            validation_epoch(
+                fran=fran,
+                discr=discr,
 
-            epoch_idx=epoch_idx,
-            device=device,
-            dl_val=dl_val,
+                l1_loss_fn=l1_loss_fn,
+                lpips_loss_fn=lpips_loss_fn,
+                bce_loss_fn=bce_loss_fn,
 
-            running_extrema_best=running_extrema_best,
-            running_extrema_worst=running_extrema_worst,
+                l1_weight=l1_weight,
+                lpips_weight=lpips_weight,
+                adv_weight=adv_weight,
 
-            save_last=save_last,
-            save_best=save_best,
-            best_metric=best_metric,
-            ckpt_dir=ckpt_dir,
-            run_name=run_name,
-        )
+                epoch_idx=epoch_idx,
+                device=device,
+                dl_val=dl_val,
+
+                running_extrema_best=running_extrema_best,
+                running_extrema_worst=running_extrema_worst,
+
+                save_last=save_last,
+                save_best=save_best,
+                best_metric=best_metric,
+                ckpt_dir=ckpt_dir,
+                run_name=run_name,
+
+                num_steps=num_val,
+            )
 
 
 def float_list_arg_type(arg):
@@ -219,19 +224,19 @@ if __name__ == '__main__':
         help='The path to load model checkpoint weights from.'
     )
     parser.add_argument(
-        '--no_save_best', action='store_true',
-        help='If set, don\'t save a checkpoint containg the weights with the '
+        '--save_best', action='store_true',
+        help='If set, save a checkpoint containg the weights with the '
         'best performance, as defined by --best_metric and --higher_is_better.'
     )
     parser.add_argument(
-        '--no_save_last', action='store_true',
-        help='If set, don\'t save a checkpoint containing the weights of the '
+        '--save_last', action='store_true',
+        help='If set, save a checkpoint containing the weights of the '
         'last epoch.'
     )
     parser.add_argument(
         '--best_metric', default='Loss_Total',
         help='If this metric improves, create a checkpoint '
-        '(when --no_save_best is not set).'
+        '(when --save_best is set).'
     )
     parser.add_argument(
         '--higher_is_better', action='store_true',
@@ -251,7 +256,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--val_fold', default=0,
-        help='The index of the validation fold.'
+        help='The index of the validation fold.',
         type=int
     )
 
@@ -265,11 +270,11 @@ if __name__ == '__main__':
     # Dataloader args
     parser.add_argument(
         '--batch_size',
-        default=32,
+        default=8,
         help='The training batch size.',
         type=int
     )
-    parser.add_argument('--val_batch_size', default=32,
+    parser.add_argument('--val_batch_size', default=8,
                         help='The validation batch size.', type=int)
     parser.add_argument(
         '--num_workers', default=8,
@@ -301,8 +306,18 @@ if __name__ == '__main__':
         type=int
     )
     parser.add_argument(
-        '--discr_steps', default=1,
-        help='The number of discriminator training steps before a FRAN trainig step.'
+        '--val_every', default=1000,
+        help='Run validation epoch after this number of training steps.',
+        type=int
+    )
+    parser.add_argument(
+        '--num_val', default=100,
+        help='Run this number of validation steps in each validation epoch',
+        type=int
+    )
+    parser.add_argument(
+        '--discr_steps', default=5,
+        help='The number of discriminator training steps before a FRAN trainig step.',
         type=int
     )
 
@@ -324,7 +339,7 @@ if __name__ == '__main__':
     # Data augmentation
     parser.add_argument(
         '--crop_size',
-        default=224,
+        default=512,
         help='Crop size to use in the data transform pipeline.',
         type=int,
     )
@@ -394,8 +409,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    args_dict = vars(args)
     wandb.init(entity=args.wandb_entity, project=args.wandb_project,
-               config=vars(args))
+               config=args_dict)
+
+    del args_dict['wandb_entity']
+    del args_dict['wandb_project']
 
     run_training(
         **vars(args),

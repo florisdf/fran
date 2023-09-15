@@ -23,8 +23,11 @@ class FRAN(nn.Module):
 
         self.out_conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=1)
 
-    def forward(self, x0):
-        x1 = self.in_conv(x0)
+    def forward(self, x0, src_age, tgt_age):
+        x0_with_age = add_age_channel(x0, src_age)
+        x0_with_age = add_age_channel(x0_with_age, tgt_age)
+
+        x1 = self.in_conv(x0_with_age)
 
         x2 = self.down1(x1)
         x3 = self.down2(x2)
@@ -39,6 +42,11 @@ class FRAN(nn.Module):
         x = self.out_conv(x)
 
         return x + x0
+
+
+def add_age_channel(img, age):
+    age_channel = age[:, None, None, None] * torch.ones_like(img)[..., :1, :, :] / 100
+    return torch.cat([img, age_channel], dim=-3)
 
 
 class DownLayer(nn.Module):

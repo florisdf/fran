@@ -1,6 +1,7 @@
 from torch import nn
 
 from .stylegan2.model import Downsample
+from .fran import add_age_channel
 
 
 class PatchGAN(nn.Module):
@@ -44,5 +45,6 @@ class PatchGAN(nn.Module):
         sequence += [nn.Conv2d(out_channels * nf_mult, 1, kernel_size=3, padding=1)]  # output 1 channel prediction map
         self.model = nn.Sequential(*sequence)
 
-    def forward(self, x):
+    def forward(self, x, age):
+        x = add_age_channel(x, age)
         return self.model(x)

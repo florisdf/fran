@@ -29,8 +29,8 @@ class FRANDataset(Dataset):
             }
             for p in self.data_root.glob('*/*.jpg')
         ])
-        self.min_age = self.df_all['age'].min()
-        self.max_age = self.df_all['age'].max()
+        self.min_age = df_all['age'].min()
+        self.max_age = df_all['age'].max()
 
         df_train, df_val = k_fold_trainval_split(
             df_all, num_folds=num_folds, val_fold=val_fold

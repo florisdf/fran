@@ -18,9 +18,9 @@ def data_transforms(
     """Creates the data transforms for FRAN training and validation."""
 
     train_tfms = [
-        ToTensor(),
         RandomCrop(crop_size),
-        Normalize(mean=norm_mean, std=norm_std)
+        ToTensor(),
+        Normalize(mean=norm_mean, std=norm_std),
         ColorJitter(
             brightness=jitter_brightness,
             contrast=jitter_contrast,
@@ -37,8 +37,8 @@ def data_transforms(
     tfm_train = Compose(train_tfms)
 
     tfm_val = Compose([
-        ToTensor(),
         CenterCrop(crop_size),
+        ToTensor(),
         Normalize(mean=norm_mean, std=norm_std)
     ])
 
