@@ -3,3 +3,4 @@ data
 pretrained_models
 .ipynb_checkpoints
 wandb
+.venv
