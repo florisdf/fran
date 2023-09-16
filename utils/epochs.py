@@ -119,7 +119,7 @@ def training_epoch(
         loss_wrong = bce_loss_fn(pred_score_wrong, torch.zeros_like(pred_score_wrong))
 
         # Sum losses
-        discr_loss = loss_fake + loss_real1 + loss_real2 + loss_wrong
+        discr_loss = (loss_fake + loss_real2 + loss_real2 + loss_wrong)*0.25
 
         # Take optimization step
         discr.zero_grad()
