@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List
 
 import torch
 from torch import nn
@@ -23,7 +23,6 @@ def run_training(
     beta1: float,
     beta2: float,
     weight_decay: float,
-    lr_warmup_steps: int,
 
     device: torch.device,
 
@@ -287,17 +286,16 @@ if __name__ == '__main__':
                         help='The learning rate.',
                         type=float)
     parser.add_argument('--beta1', default=0.9,
-                        help='Coefficient used for computing running average of gradient in Adam.',
+                        help='Coefficient used for computing running average '
+                        'of gradient in Adam.',
                         type=float)
     parser.add_argument('--beta2', default=0.999,
-                        help='Coefficient used for computing running average of square gradient in Adam.',
+                        help='Coefficient used for computing running average '
+                        'of square gradient in Adam.',
                         type=float)
     parser.add_argument('--weight_decay', default=1e-5,
                         help='The weight decay.',
                         type=float)
-    parser.add_argument('--lr_warmup_steps', default=1,
-                        help='The number of learning rate warmup steps.',
-                        type=int)
 
     # Train args
     parser.add_argument(
@@ -317,7 +315,8 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--discr_steps', default=5,
-        help='The number of discriminator training steps before a FRAN trainig step.',
+        help='The number of discriminator training steps before a FRAN '
+        'trainig step.',
         type=int
     )
 
@@ -405,7 +404,6 @@ if __name__ == '__main__':
         type=float,
         help='Weight for the adversarial loss term.'
     )
-
 
     args = parser.parse_args()
 
