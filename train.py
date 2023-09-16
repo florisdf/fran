@@ -15,7 +15,6 @@ from models.fran import FRAN
 from models.patchGAN import PatchGAN
 from transforms.fran_transforms import data_transforms
 from utils.epochs import training_epoch, validation_epoch
-from utils.running_extrema import RunningExtrema, MAX, MIN
 
 
 def run_training(
@@ -26,8 +25,6 @@ def run_training(
 
     device: torch.device,
 
-    best_metric: str,
-    higher_is_better: bool,
     ckpts_path: Path,
     run_name: str,
 
@@ -58,7 +55,6 @@ def run_training(
 
     load_ckpt: Optional[Path],
     save_last: bool,
-    save_best: bool,
 
     data_root: str,
 ):
@@ -135,17 +131,7 @@ def run_training(
     lpips_loss_fn = lpips.LPIPS(net='vgg').to(device)
     bce_loss_fn = nn.BCELoss()
 
-    # Initialize Running Extrema
-    running_extrema_best = RunningExtrema(
-        MAX if higher_is_better else MIN
-    )
-    running_extrema_worst = RunningExtrema(
-        MIN if higher_is_better else MAX
-    )
     ckpt_dir = Path(ckpts_path)
-
-    running_extrema_best.clear()
-    running_extrema_worst.clear()
 
     # Training loop
     for epoch_idx in tqdm(range(num_epochs), leave=True):
@@ -185,24 +171,11 @@ def run_training(
                 fran=fran,
                 discr=discr,
 
-                l1_loss_fn=l1_loss_fn,
-                lpips_loss_fn=lpips_loss_fn,
-                bce_loss_fn=bce_loss_fn,
-
-                l1_weight=l1_weight,
-                lpips_weight=lpips_weight,
-                adv_weight=adv_weight,
-
                 epoch_idx=epoch_idx,
                 device=device,
                 dl_val=dl_val,
 
-                running_extrema_best=running_extrema_best,
-                running_extrema_worst=running_extrema_worst,
-
                 save_last=save_last,
-                save_best=save_best,
-                best_metric=best_metric,
                 ckpt_dir=ckpt_dir,
                 run_name=run_name,
 
@@ -223,24 +196,9 @@ if __name__ == '__main__':
         help='The path to load model checkpoint weights from.'
     )
     parser.add_argument(
-        '--save_best', action='store_true',
-        help='If set, save a checkpoint containg the weights with the '
-        'best performance, as defined by --best_metric and --higher_is_better.'
-    )
-    parser.add_argument(
         '--save_last', action='store_true',
         help='If set, save a checkpoint containing the weights of the '
         'last epoch.'
-    )
-    parser.add_argument(
-        '--best_metric', default='Loss_Total',
-        help='If this metric improves, create a checkpoint '
-        '(when --save_best is set).'
-    )
-    parser.add_argument(
-        '--higher_is_better', action='store_true',
-        help='If set, the metric set with --best_metric is better when '
-        'it increases.'
     )
     parser.add_argument(
         '--ckpts_path', default='./ckpts',

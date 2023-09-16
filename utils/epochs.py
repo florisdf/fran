@@ -157,24 +157,11 @@ def validation_epoch(
     fran,
     discr,
 
-    l1_loss_fn,
-    lpips_loss_fn,
-    bce_loss_fn,
-
-    l1_weight: float,
-    lpips_weight: float,
-    adv_weight: float,
-
     epoch_idx: int,
     device: torch.device,
     dl_val: DataLoader,
 
-    running_extrema_best: RunningExtrema,
-    running_extrema_worst: RunningExtrema,
-
     save_last: bool,
-    save_best: bool,
-    best_metric: str,
     ckpt_dir: Path,
     run_name: str,
 
@@ -182,7 +169,6 @@ def validation_epoch(
     log_img_every: int = 5,
     img_log_size: tuple = (200, 100),
 ):
-    log_dicts = []
     wandb_ims = []
 
     num_steps = num_steps if num_steps is not None else len(dl_val)
@@ -201,68 +187,6 @@ def validation_epoch(
 
         # Predict image with tgt age
         fran_img = fran(src_img, src_age, tgt_age)
-
-        log_dict = {}
-
-        # L1 Loss
-        l1_loss = l1_loss_fn(fran_img, tgt_img)
-
-        # LPIPS loss
-        lpips_loss = lpips_loss_fn(fran_img, tgt_img).mean()
-
-        # Adversarial loss (note: FRAN wants discr's outputs to be 1)
-        pred_score = torch.sigmoid(discr(fran_img, tgt_age))
-        adv_loss = bce_loss_fn(pred_score, torch.ones_like(pred_score))
-
-        # Sum losses
-        fran_loss = (
-            l1_weight * l1_loss
-            + lpips_weight * lpips_loss
-            + adv_weight * adv_loss
-        )
-
-        log_dict.update({
-            'FRAN_L1': l1_loss,
-            'FRAN_LPIPS': lpips_loss,
-            'FRAN_Adv': adv_loss,
-            'FRAN_Total': fran_loss,
-        })
-
-        # Loss for fake images
-        pred_score_fake = torch.sigmoid(discr(fran_img.detach(), tgt_age))
-        loss_fake = bce_loss_fn(pred_score_fake, torch.zeros_like(pred_score_fake))
-
-        # Losses for real images with true age
-        pred_score_real1 = torch.sigmoid(discr(src_img, src_age))
-        loss_real1 = bce_loss_fn(pred_score_real1, torch.ones_like(pred_score_real1))
-
-        pred_score_real2 = torch.sigmoid(discr(tgt_img, tgt_age))
-        loss_real2 = bce_loss_fn(pred_score_real2, torch.ones_like(pred_score_real2))
-
-        # Also compute loss for real images with wrong ages; these should also
-        # give a score of zero
-        wrong_age = get_wrong_ages(src_age, dl_val.dataset.max_age,
-                                   dl_val.dataset.min_age)
-        pred_score_wrong = torch.sigmoid(discr(src_img, wrong_age))
-        loss_wrong = bce_loss_fn(pred_score_wrong, torch.zeros_like(pred_score_wrong))
-
-        # Sum losses
-        discr_loss = loss_fake + loss_real1 + loss_real2 + loss_wrong
-
-        # Log results
-        log_dict.update({
-            'Discr_fake': loss_fake,
-            'Discr_real1': loss_real1,
-            'Discr_real2': loss_real2,
-            'Discr_wrong_age': loss_wrong,
-            'Discr_Total': discr_loss,
-        })
- 
-        log_dict.update({
-            'Loss_Total': fran_loss + discr_loss,
-        })
-
-        log_dicts.append(log_dict)
 
         if val_batch_idx % log_img_every == 0:
             # Log last validation batch
@@ -286,25 +210,7 @@ def validation_epoch(
         'batch_idx': train_batch_idx,
     })
 
-    val_log_dict = pd.DataFrame(log_dicts).mean().to_dict()
-    log(val_log_dict, epoch_idx=epoch_idx,
-        batch_idx=train_batch_idx,
-        section='Val')
-
-    # Check if the value of the metric to optimize is the best
-    best_metric_val = val_log_dict[best_metric]
-    is_best = running_extrema_best.is_new_extremum(best_metric,
-                                                   best_metric_val)
     # Create checkpoints
     create_checkpoints(fran, discr, run_name, ckpt_dir,
-                       save_best=save_best and is_best,
+                       save_best=False,
                        save_last=save_last)
-
-    # Update and log running extrema
-    running_extrema_best.update_dict(val_log_dict)
-    running_extrema_worst.update_dict(val_log_dict)
-
-    log(running_extrema_best.extrema_dict, epoch_idx=epoch_idx,
-        section=f'{running_extrema_best.extremum.title()}Val')
-    log(running_extrema_worst.extrema_dict, epoch_idx=epoch_idx,
-        section=f'{running_extrema_worst.extremum.title()}Val')
