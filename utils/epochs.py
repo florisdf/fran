@@ -178,17 +178,17 @@ def validation_epoch(
         tqdm(range(num_steps), leave=False),
         dl_val
     ):
-        src_img, src_age, tgt_img, tgt_age = batch
-        src_img = src_img.to(device)
-        src_age = src_age.to(device)
-
-        tgt_img = tgt_img.to(device)
-        tgt_age = tgt_age.to(device)
-
-        # Predict image with tgt age
-        fran_img = fran(src_img, src_age, tgt_age)
-
         if val_batch_idx % log_img_every == 0:
+            src_img, src_age, tgt_img, tgt_age = batch
+            src_img = src_img.to(device)
+            src_age = src_age.to(device)
+
+            tgt_img = tgt_img.to(device)
+            tgt_age = tgt_age.to(device)
+
+            # Predict image with tgt age
+            fran_img = fran(src_img, src_age, tgt_age)
+
             # Log last validation batch
             norm = dl_val.dataset.transform.transforms[-1]
             inv_std = [1/s for s in norm.std]
