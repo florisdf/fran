@@ -1,11 +1,7 @@
 from pathlib import Path
-import pandas as pd
 import sys
-from typing import Callable, Optional
 
-from PIL import Image
 import torch
-from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torchvision.transforms import Normalize
@@ -15,7 +11,6 @@ import wandb
 
 from .log import log
 from .ckpts import create_checkpoints
-from .running_extrema import RunningExtrema
 
 train_batch_idx = -1  # should have global scope
 
@@ -46,7 +41,9 @@ def training_epoch(
     num_steps = num_steps if num_steps is not None else len(dl_train)
 
     start_idx = train_batch_idx + 1
-    end_idx = start_idx + min(num_steps, len(dl_train) - start_idx % len(dl_train))
+    end_idx = start_idx + min(
+        num_steps, len(dl_train) - start_idx % len(dl_train)
+    )
 
     for (train_batch_idx, batch) in zip(
         tqdm(range(start_idx, end_idx), leave=False),
@@ -102,21 +99,25 @@ def training_epoch(
         # Train discriminator
         # Loss for fake images
         pred_score_fake = torch.sigmoid(discr(fran_img.detach(), tgt_age))
-        loss_fake = bce_loss_fn(pred_score_fake, torch.zeros_like(pred_score_fake))
+        loss_fake = bce_loss_fn(pred_score_fake,
+                                torch.zeros_like(pred_score_fake))
 
         # Losses for real images with true age
         pred_score_real1 = torch.sigmoid(discr(src_img, src_age))
-        loss_real1 = bce_loss_fn(pred_score_real1, torch.ones_like(pred_score_real1))
+        loss_real1 = bce_loss_fn(pred_score_real1,
+                                 torch.ones_like(pred_score_real1))
 
         pred_score_real2 = torch.sigmoid(discr(tgt_img, tgt_age))
-        loss_real2 = bce_loss_fn(pred_score_real2, torch.ones_like(pred_score_real2))
+        loss_real2 = bce_loss_fn(pred_score_real2,
+                                 torch.ones_like(pred_score_real2))
 
         # Also compute loss for real images with wrong ages; these should also
         # give a score of zero
         wrong_age = get_wrong_ages(src_age, dl_train.dataset.max_age,
                                    dl_train.dataset.min_age)
         pred_score_wrong = torch.sigmoid(discr(src_img, wrong_age))
-        loss_wrong = bce_loss_fn(pred_score_wrong, torch.zeros_like(pred_score_wrong))
+        loss_wrong = bce_loss_fn(pred_score_wrong,
+                                 torch.zeros_like(pred_score_wrong))
 
         # Sum losses
         discr_loss = (loss_fake + loss_real2 + loss_real2 + loss_wrong)*0.25
@@ -147,8 +148,10 @@ def training_epoch(
 
 def get_wrong_ages(true_ages, max_age, min_age):
     age_grid = torch.stack([torch.randperm(max_age - min_age + 1) + min_age
-                          for _ in range(len(true_ages))]).type_as(true_ages)
-    age_grid = age_grid[age_grid != true_ages[:, None]].reshape((age_grid.shape[0], age_grid.shape[1] - 1))
+                            for _ in range(len(true_ages))]).type_as(true_ages)
+    age_grid = age_grid[
+        age_grid != true_ages[:, None]
+    ].reshape((age_grid.shape[0], age_grid.shape[1] - 1))
     return age_grid[:, 0]
 
 
@@ -201,7 +204,9 @@ def validation_epoch(
             ))[0]
 
             wandb_ims.append(
-                wandb.Image(to_pil_image(torch.cat([inv_norm(img1), inv_norm(img2)], dim=-1).cpu()).resize(img_log_size),
+                wandb.Image(to_pil_image(
+                    torch.cat([inv_norm(img1), inv_norm(img2)], dim=-1).cpu()
+                ).resize(img_log_size),
                             caption=f'{age1} -> {age2}')
             )
 
