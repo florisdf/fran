@@ -243,7 +243,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', default=0.0001,
                         help='The learning rate.',
                         type=float)
-    parser.add_argument('--beta1', default=0.9,
+    parser.add_argument('--beta1', default=0.5,
                         help='Coefficient used for computing running average '
                         'of gradient in Adam.',
                         type=float)
