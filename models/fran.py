@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from .stylegan2.model import Upsample, Downsample
+from .blurpool import BlurPool
 
 
 class FRAN(nn.Module):
@@ -53,7 +53,7 @@ class DownLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.down_conv = nn.Sequential(
-            Downsample(kernel=[1, 3, 3, 1], factor=2),
+            BlurPool(channels=in_channels),
             DoubleConv(in_channels, out_channels)
         )
 
@@ -64,7 +64,7 @@ class DownLayer(nn.Module):
 class UpLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.upsample = Upsample(kernel=[1, 3, 3, 1], factor=2)
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
         self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
 
     def forward(self, x1, x2):
