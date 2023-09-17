@@ -272,7 +272,7 @@ if __name__ == '__main__':
         type=int
     )
     parser.add_argument(
-        '--discr_steps', default=5,
+        '--discr_steps', default=1,
         help='The number of discriminator training steps before a FRAN '
         'trainig step.',
         type=int
