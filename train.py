@@ -240,7 +240,7 @@ if __name__ == '__main__':
     )
 
     # Optimizer args
-    parser.add_argument('--lr', default=0.01,
+    parser.add_argument('--lr', default=0.0001,
                         help='The learning rate.',
                         type=float)
     parser.add_argument('--beta1', default=0.9,
