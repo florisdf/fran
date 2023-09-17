@@ -251,7 +251,7 @@ if __name__ == '__main__':
                         help='Coefficient used for computing running average '
                         'of square gradient in Adam.',
                         type=float)
-    parser.add_argument('--weight_decay', default=1e-5,
+    parser.add_argument('--weight_decay', default=0,
                         help='The weight decay.',
                         type=float)
 
