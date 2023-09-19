@@ -303,25 +303,25 @@ if __name__ == '__main__':
     parser.add_argument(
         '--jitter_brightness',
         default=0,
-        type=int,
+        type=float,
         help='Brightness jitter'
     )
     parser.add_argument(
         '--jitter_saturation',
         default=0,
-        type=int,
+        type=float,
         help='Saturation jitter'
     )
     parser.add_argument(
         '--jitter_hue',
         default=0,
-        type=int,
+        type=float,
         help='Hue jitter'
     )
     parser.add_argument(
         '--jitter_contrast',
         default=0,
-        type=int,
+        type=float,
         help='Contrast jitter'
     )
     parser.add_argument(
