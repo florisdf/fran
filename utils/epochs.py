@@ -30,6 +30,8 @@ def training_epoch(
     lpips_weight: float,
     adv_weight: float,
 
+    discr_weight: float,
+
     epoch_idx: int,
     device: torch.device,
     dl_train: DataLoader,
@@ -120,7 +122,8 @@ def training_epoch(
                                  torch.zeros_like(pred_score_wrong))
 
         # Sum losses
-        discr_loss = (loss_fake + loss_real2 + loss_real2 + loss_wrong)*0.25
+        discr_loss = (loss_fake + loss_real2 + loss_real2
+                      + loss_wrong)*discr_weight
 
         # Take optimization step
         discr.zero_grad()

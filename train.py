@@ -44,6 +44,8 @@ def run_training(
     lpips_weight: float,
     adv_weight: float,
 
+    discr_weight: float,
+
     discr_steps: int,
 
     num_epochs: int,
@@ -155,6 +157,8 @@ def run_training(
                 l1_weight=l1_weight,
                 lpips_weight=lpips_weight,
                 adv_weight=adv_weight,
+
+                discr_weight=discr_weight,
 
                 epoch_idx=epoch_idx,
                 device=device,
@@ -343,7 +347,7 @@ if __name__ == '__main__':
         type=float_list_arg_type,
     )
 
-    # Loss term weights
+    # FRAN loss term weights
     parser.add_argument(
         '--l1_weight',
         default=1.0,
@@ -361,6 +365,14 @@ if __name__ == '__main__':
         default=0.05,
         type=float,
         help='Weight for the adversarial loss term.'
+    )
+
+    # Discriminator loss weight
+    parser.add_argument(
+        '--discr_weight',
+        default=0.25,
+        type=float,
+        help='Multiply the sum of the discriminator losses by this factor',
     )
 
     args = parser.parse_args()
