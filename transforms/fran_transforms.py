@@ -1,6 +1,5 @@
 from typing import Callable, List, Tuple
 
-import torch
 from torchvision.transforms import CenterCrop, Compose, ToTensor, Normalize, \
     RandomCrop, ColorJitter, RandomRotation
 
@@ -17,22 +16,24 @@ def data_transforms(
 ) -> Tuple[Callable, Callable]:
     """Creates the data transforms for FRAN training and validation."""
 
-    train_tfms = [
-        RandomCrop(crop_size),
-        ToTensor(),
-        Normalize(mean=norm_mean, std=norm_std),
-        ColorJitter(
-            brightness=jitter_brightness,
-            contrast=jitter_contrast,
-            saturation=jitter_saturation,
-            hue=jitter_hue,
-        )
-    ]
+    train_tfms = []
 
     if random_angle != 0:
         train_tfms.append(
             RandomRotation(random_angle)
         )
+
+    train_tfms.extend([
+        RandomCrop(crop_size),
+        ColorJitter(
+            brightness=jitter_brightness,
+            contrast=jitter_contrast,
+            saturation=jitter_saturation,
+            hue=jitter_hue,
+        ),
+        ToTensor(),
+        Normalize(mean=norm_mean, std=norm_std),
+    ])
 
     tfm_train = Compose(train_tfms)
 
