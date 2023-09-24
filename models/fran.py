@@ -24,8 +24,15 @@ class FRAN(nn.Module):
         self.out_conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=1)
 
     def forward(self, x0, src_age, tgt_age):
-        x0_with_age = add_age_channel(x0, src_age)
-        x0_with_age = add_age_channel(x0_with_age, tgt_age)
+        if src_age.ndim == 1:
+            x0_with_age = add_age_channel(x0, src_age)
+        else:
+            x0_with_age = torch.cat([x0, src_age / 100], dim=-3)
+
+        if tgt_age.ndim == 1:
+            x0_with_age = add_age_channel(x0_with_age, tgt_age)
+        else:
+            x0_with_age = torch.cat([x0_with_age, tgt_age / 100], dim=-3)
 
         x1 = self.in_conv(x0_with_age)
 
