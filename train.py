@@ -84,6 +84,7 @@ def run_training(
         transform=tfm_val,
         num_folds=num_folds,
         val_fold=val_fold,
+        n_subsample=40,
     )
 
     # Create data loaders

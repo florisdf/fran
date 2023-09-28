@@ -17,6 +17,8 @@ class FRANDataset(Dataset):
         transform: Optional[Callable] = None,
         num_folds: int = 5,
         val_fold: int = -1,
+        n_subsample: int = None,
+        subsample_seed: int = 42,
     ):
         self.data_root = Path(data_root)
         self.transform = transform
@@ -37,6 +39,12 @@ class FRANDataset(Dataset):
         )
 
         self.df = df_val if is_val else df_train
+
+        if n_subsample is not None:
+            self.df = self.df.sample(
+                n_subsample, random_state=subsample_seed,
+                ignore_index=True,
+            )
 
         self.pairs = [
             (i, j)
