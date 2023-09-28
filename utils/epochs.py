@@ -207,17 +207,16 @@ def validation_epoch(
         inv_mean = [-m/s for m, s in zip(norm.mean, norm.std)]
         inv_norm = Normalize(inv_mean, inv_std)
 
-        img1, img2, age1, age2 = list(zip(
+        for img1, img2, age1, age2 in zip(
             src_img, fran_img.detach(),
             src_age, tgt_age,
-        ))[0]
-
-        wandb_ims.append(
-            wandb.Image(to_pil_image(
-                torch.cat([inv_norm(img1), inv_norm(img2)], dim=-1).cpu()
-            ).resize(img_log_size),
-                        caption=f'{age1} -> {age2}')
-        )
+        ):
+            wandb_ims.append(
+                wandb.Image(to_pil_image(
+                    torch.cat([inv_norm(img1), inv_norm(img2)], dim=-1).cpu()
+                ).resize(img_log_size),
+                            caption=f'{age1} -> {age2}')
+            )
 
     wandb.log({
         'Examples': wandb_ims,
