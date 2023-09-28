@@ -14,7 +14,7 @@ from datasets.fran_dataset import FRANDataset
 from models.fran import FRAN
 from models.patchGAN import PatchGAN
 from transforms.fran_transforms import data_transforms
-from utils.epochs import training_epoch, validation_epoch
+from utils.epochs import run_epoch
 
 
 def run_training(
@@ -137,54 +137,35 @@ def run_training(
 
     # Training loop
     for epoch_idx in tqdm(range(num_epochs), leave=True):
-        is_end_of_epoch = False
+        run_epoch(
+            fran=fran,
+            discr=discr,
 
-        while not is_end_of_epoch:
-            # Training steps
-            fran.train()
-            discr.train()
-            is_end_of_epoch = training_epoch(
-                fran=fran,
-                discr=discr,
+            fran_optim=fran_optimizer,
+            discr_optim=discr_optimizer,
 
-                fran_optim=fran_optimizer,
-                discr_optim=discr_optimizer,
+            l1_loss_fn=l1_loss_fn,
+            lpips_loss_fn=lpips_loss_fn,
+            bce_loss_fn=bce_loss_fn,
 
-                l1_loss_fn=l1_loss_fn,
-                lpips_loss_fn=lpips_loss_fn,
-                bce_loss_fn=bce_loss_fn,
+            l1_weight=l1_weight,
+            lpips_weight=lpips_weight,
+            adv_weight=adv_weight,
 
-                l1_weight=l1_weight,
-                lpips_weight=lpips_weight,
-                adv_weight=adv_weight,
+            discr_weight=discr_weight,
 
-                discr_weight=discr_weight,
+            epoch_idx=epoch_idx,
+            device=device,
+            dl_train=dl_train,
+            dl_val=dl_val,
+            discr_steps=discr_steps,
 
-                epoch_idx=epoch_idx,
-                device=device,
-                dl_train=dl_train,
-                discr_steps=discr_steps,
+            save_last=save_last,
+            ckpt_dir=ckpt_dir,
+            run_name=run_name,
 
-                num_steps=val_every
-            )
-
-            # Validation epoch
-            fran.eval()
-            discr.eval()
-            validation_epoch(
-                fran=fran,
-                discr=discr,
-
-                epoch_idx=epoch_idx,
-                device=device,
-                dl_val=dl_val,
-
-                save_last=save_last,
-                ckpt_dir=ckpt_dir,
-                run_name=run_name,
-
-                num_steps=num_val,
-            )
+            val_every=val_every
+        )
 
 
 def float_list_arg_type(arg):

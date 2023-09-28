@@ -15,7 +15,7 @@ from .ckpts import create_checkpoints
 train_batch_idx = -1  # should have global scope
 
 
-def training_epoch(
+def run_epoch(
     fran,
     discr,
 
@@ -35,22 +35,23 @@ def training_epoch(
     epoch_idx: int,
     device: torch.device,
     dl_train: DataLoader,
+    dl_val: DataLoader,
     discr_steps: int,
 
-    num_steps: int = None,
+    save_last,
+    ckpt_dir,
+    run_name,
+
+    val_every: int,
 ):
     global train_batch_idx
-    num_steps = num_steps if num_steps is not None else len(dl_train)
 
-    start_idx = train_batch_idx + 1
-    end_idx = start_idx + min(
-        num_steps, len(dl_train) - start_idx % len(dl_train)
-    )
-
-    for (train_batch_idx, batch) in zip(
-        tqdm(range(start_idx, end_idx), leave=False),
-        dl_train
+    for (train_batch_idx, batch) in enumerate(
+        tqdm(dl_train, leave=False),
+        start=train_batch_idx + 1,
     ):
+        fran.train()
+        discr.train()
         src_img, src_age, tgt_img, tgt_age = batch
         src_img = src_img.to(device)
         src_age = src_age.to(device)
@@ -145,8 +146,22 @@ def training_epoch(
         if torch.isnan(discr_loss):
             sys.exit('Loss is NaN. Exiting...')
 
-    # Return True when an epoch has ended
-    return end_idx % len(dl_train) == 0
+        if train_batch_idx % val_every == 0:
+            # Validation epoch
+            fran.eval()
+            discr.eval()
+            validation_epoch(
+                fran=fran,
+                discr=discr,
+
+                epoch_idx=epoch_idx,
+                device=device,
+                dl_val=dl_val,
+
+                save_last=save_last,
+                ckpt_dir=ckpt_dir,
+                run_name=run_name,
+            )
 
 
 def get_wrong_ages(true_ages, max_age, min_age):
@@ -172,7 +187,7 @@ def validation_epoch(
     run_name: str,
 
     num_steps: int = None,
-    log_img_every: int = 5,
+    log_img_every: int = 40,
     img_log_size: tuple = (200, 100),
 ):
     wandb_ims = []
