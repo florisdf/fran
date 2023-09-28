@@ -20,5 +20,5 @@ class AgeTransform(object):
 
 def add_aging_channel(img, target_age):
     target_age = int(target_age) / 100  # normalize aging amount to be in range [-1,1]
-    img = torch.cat([img, target_age * torch.ones_like(img)])
+    img = torch.cat([img, target_age * torch.ones((1, *img.shape[1:]))])
     return img
