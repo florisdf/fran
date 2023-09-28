@@ -146,7 +146,7 @@ def run_epoch(
         if torch.isnan(discr_loss):
             sys.exit('Loss is NaN. Exiting...')
 
-        if (train_batch_idx + 1) % val_every == 0:
+        if train_batch_idx % val_every == 0:
             # Validation epoch
             fran.eval()
             discr.eval()
