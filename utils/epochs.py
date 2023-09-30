@@ -38,7 +38,6 @@ def run_epoch(
     dl_val: DataLoader,
     discr_steps: int,
 
-    save_last,
     ckpt_dir,
     run_name,
 
@@ -158,7 +157,6 @@ def run_epoch(
                 device=device,
                 dl_val=dl_val,
 
-                save_last=save_last,
                 ckpt_dir=ckpt_dir,
                 run_name=run_name,
             )
@@ -184,7 +182,6 @@ def validation_epoch(
     device: torch.device,
     dl_val: DataLoader,
 
-    save_last: bool,
     ckpt_dir: Path,
     run_name: str,
 
