@@ -2,6 +2,7 @@ from pathlib import Path
 import sys
 
 import torch
+from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from torchvision.transforms import Normalize
@@ -10,7 +11,6 @@ from tqdm import tqdm
 import wandb
 
 from .log import log
-from .ckpts import create_checkpoints
 
 train_batch_idx = -1  # should have global scope
 
@@ -163,6 +163,8 @@ def run_epoch(
                 run_name=run_name,
             )
 
+    create_checkpoint(fran, discr, run_name, ckpt_dir, f'ep{epoch_idx}')
+
 
 def get_wrong_ages(true_ages, max_age, min_age):
     age_grid = torch.stack([torch.randperm(max_age - min_age + 1) + min_age
@@ -234,6 +236,31 @@ def validation_epoch(
     })
 
     # Create checkpoints
-    create_checkpoints(fran, discr, run_name, ckpt_dir,
-                       save_best=False,
-                       save_last=save_last)
+    create_checkpoint(fran, discr, run_name, ckpt_dir, 'last')
+
+
+def create_checkpoint(
+    fran: nn.Module,
+    patchGAN: nn.Module,
+    run_name: str,
+    ckpt_dir: Path,
+    label: str,
+):
+    file_prefix = f"{run_name}_"
+    file_suffix = '.pth'
+
+    if not ckpt_dir.exists():
+        ckpt_dir.mkdir(parents=True)
+
+    fran_state_dict = fran.state_dict()
+    patchGAN = patchGAN.state_dict()
+    ckpt_dict = {
+        'FRAN': fran_state_dict,
+        'PatchGAN': patchGAN,
+    }
+
+    torch.save(
+        ckpt_dict,
+        ckpt_dir
+        / f'{file_prefix}{label}{file_suffix}'
+    )

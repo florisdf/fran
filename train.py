@@ -56,7 +56,6 @@ def run_training(
     num_workers: int,
 
     load_ckpt: Optional[Path],
-    save_last: bool,
 
     data_root: str,
 ):
@@ -160,7 +159,6 @@ def run_training(
             dl_val=dl_val,
             discr_steps=discr_steps,
 
-            save_last=save_last,
             ckpt_dir=ckpt_dir,
             run_name=run_name,
 
@@ -179,11 +177,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--load_ckpt', default=None,
         help='The path to load model checkpoint weights from.'
-    )
-    parser.add_argument(
-        '--save_last', action='store_true',
-        help='If set, save a checkpoint containing the weights of the '
-        'last epoch.'
     )
     parser.add_argument(
         '--ckpts_path', default='./ckpts',
