@@ -1,5 +1,6 @@
 from itertools import product
 from pathlib import Path
+from random import shuffle, seed
 from typing import Callable, Optional
 
 import pandas as pd
@@ -17,6 +18,8 @@ class FRANDataset(Dataset):
         transform: Optional[Callable] = None,
         num_folds: int = 5,
         val_fold: int = -1,
+        n_subsample: int = None,
+        subsample_seed: int = 42,
     ):
         self.data_root = Path(data_root)
         self.transform = transform
@@ -43,6 +46,12 @@ class FRANDataset(Dataset):
             for label, group in self.df.groupby('label')
             for i, j in product(group.index, group.index)
         ]
+
+        if n_subsample is not None:
+            idxs = list(range(len(self.pairs)))
+            seed(subsample_seed)
+            shuffle(idxs)
+            self.pairs = [self.pairs[i] for i in idxs[:n_subsample]]
 
     def __len__(self):
         return len(self.pairs)

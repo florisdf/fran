@@ -188,41 +188,31 @@ def validation_epoch(
     ckpt_dir: Path,
     run_name: str,
 
-    num_steps: int = None,
-    log_img_every: int = 40,
     img_log_size: tuple = (200, 100),
 ):
     wandb_ims = []
 
-    num_steps = num_steps if num_steps is not None else len(dl_val)
-    num_steps = min(num_steps, len(dl_val))
+    for (val_batch_idx, batch) in enumerate(tqdm(dl_val, leave=False)):
+        src_img, src_age, tgt_img, tgt_age = batch
+        src_img = src_img.to(device)
+        src_age = src_age.to(device)
 
-    for (val_batch_idx, batch) in zip(
-        tqdm(range(num_steps), leave=False),
-        dl_val
-    ):
-        if val_batch_idx % log_img_every == 0:
-            src_img, src_age, tgt_img, tgt_age = batch
-            src_img = src_img.to(device)
-            src_age = src_age.to(device)
+        tgt_img = tgt_img.to(device)
+        tgt_age = tgt_age.to(device)
 
-            tgt_img = tgt_img.to(device)
-            tgt_age = tgt_age.to(device)
+        # Predict image with tgt age
+        fran_img = fran(src_img, src_age, tgt_age)
 
-            # Predict image with tgt age
-            fran_img = fran(src_img, src_age, tgt_age)
+        # Log last validation batch
+        norm = dl_val.dataset.transform.transforms[-1]
+        inv_std = [1/s for s in norm.std]
+        inv_mean = [-m/s for m, s in zip(norm.mean, norm.std)]
+        inv_norm = Normalize(inv_mean, inv_std)
 
-            # Log last validation batch
-            norm = dl_val.dataset.transform.transforms[-1]
-            inv_std = [1/s for s in norm.std]
-            inv_mean = [-m/s for m, s in zip(norm.mean, norm.std)]
-            inv_norm = Normalize(inv_mean, inv_std)
-
-            img1, img2, age1, age2 = list(zip(
-                src_img, fran_img.detach(),
-                src_age, tgt_age,
-            ))[0]
-
+        for img1, img2, age1, age2 in zip(
+            src_img, fran_img.detach(),
+            src_age, tgt_age,
+        ):
             wandb_ims.append(
                 wandb.Image(to_pil_image(
                     torch.cat([inv_norm(img1), inv_norm(img2)], dim=-1).cpu()
