@@ -18,6 +18,8 @@ from utils.epochs import run_epoch
 
 
 def run_training(
+    padding_mode: str,
+
     lr: float,
     beta1: float,
     beta2: float,
@@ -101,8 +103,9 @@ def run_training(
     )
 
     # Create models
-    fran = FRAN()
-    discr = PatchGAN(in_channels=4)  # RGB + age channel
+    fran = FRAN(padding_mode)
+    discr = PatchGAN(in_channels=4,  # RGB + age channel
+                     padding_mode=padding_mode)
 
     # Load checkpoint
     if load_ckpt is not None:
@@ -182,6 +185,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '--ckpts_path', default='./ckpts',
         help='The directory to save checkpoints.'
+    )
+
+    # Model args
+    parser.add_argument(
+        '--padding_mode', default='zeros',
+        help='The padding mode to use in convolutional layers.'
     )
 
     # K-Fold args
